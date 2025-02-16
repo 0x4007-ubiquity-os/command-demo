@@ -149,7 +149,7 @@ async function createPullRequest({ payload, logger, userOctokit, userName }: Con
 }
 
 export async function handleComment(context: Context<"issue_comment.created" | "issue_comment.edited">) {
-  const { eventName, payload, logger, octokit, userName, userOctokit } = context;
+  const {  payload, logger, octokit, userName, userOctokit } = context;
 
   const body = payload.comment.body;
   const repo = payload.repository.name;
@@ -158,7 +158,7 @@ export async function handleComment(context: Context<"issue_comment.created" | "
 
   if (body.trim().startsWith("/demo")) {
     if (!(await isUserAdmin(context))) {
-      throw logger.error("You do not have admin privileges thus cannot start a demo.");
+      throw logger.error("You do not have permissions to start the demo. You can set up your own instance at demo.ubq.fi");
     }
     logger.info("Processing /demo command");
     await openIssue(context);
@@ -190,13 +190,6 @@ When pricing is set on any GitHub Issue, they will be automatically populated in
       issue_number: issueNumber,
       body: `/start`,
     });
-  } else if (eventName === "issue_comment.edited" && body.includes("ubiquity-os-marketplace/text-conversation-rewards")) {
-    /*await userOctokit.rest.issues.createComment({
-      owner,
-      repo,
-      issue_number: issueNumber,
-      body: `/ask How can I redeem my rewards? Can you tell me step by step?`,
-    });*/
   }
 }
 
@@ -239,7 +232,7 @@ Enjoy the tour!`,
       owner,
       repo,
       issue_number: issueNumber,
-      body: "/wallet ubq.eth",
+      body: "/wallet 0xefC0e701A824943b469a694aC564Aa1efF7Ab7dd",
     });
   } else {
     logger.info("Ignoring label change", { label, assignee: payload.issue.assignee, repo });
