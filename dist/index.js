@@ -31459,31 +31459,30 @@ async function createPullRequest({ payload: e, logger: t, userOctokit: r, userNa
   return await r.rest.pulls.create({ owner: n, repo: o, head: `${s}:${l}`, base: c, body: `Resolves #${A}`, title: l });
 }
 async function handleComment(e) {
-  const { eventName: t, payload: r, logger: s, octokit: o, userName: A, userOctokit: n } = e;
-  const i = r.comment.body;
-  const a = r.repository.name;
-  const c = r.repository.owner.login;
-  const u = r.issue.number;
-  if (i.trim().startsWith("/demo")) {
+  const { payload: t, logger: r, octokit: s, userName: o, userOctokit: A } = e;
+  const n = t.comment.body;
+  const i = t.repository.name;
+  const a = t.repository.owner.login;
+  const c = t.issue.number;
+  if (n.trim().startsWith("/demo")) {
     if (!(await isUserAdmin(e))) {
-      throw s.error("You do not have admin privileges thus cannot start a demo.");
+      throw r.error("You do not have permissions to start the demo. You can set up your own instance at demo.ubq.fi");
     }
-    s.info("Processing /demo command");
+    r.info("Processing /demo command");
     await openIssue(e);
     await setLabels(e);
-  } else if (i.includes("ubiquity-os-command-start-stop") && i.includes(A)) {
-    s.info("Processing ubiquity-os-command-start-stop post comment");
+  } else if (n.includes("ubiquity-os-command-start-stop") && n.includes(o)) {
+    r.info("Processing ubiquity-os-command-start-stop post comment");
     const t = await createPullRequest(e);
-    await o.rest.pulls.merge({ owner: c, repo: a, pull_number: t.data.number });
-  } else if (i.includes("ubiquity-os-command-wallet") && i.includes(A)) {
-    await n.rest.issues.createComment({
-      owner: c,
-      repo: a,
-      issue_number: u,
+    await s.rest.pulls.merge({ owner: a, repo: i, pull_number: t.data.number });
+  } else if (n.includes("ubiquity-os-command-wallet") && n.includes(o)) {
+    await A.rest.issues.createComment({
+      owner: a,
+      repo: i,
+      issue_number: c,
       body: `Now I can self assign to this task!\n\nWe have a built-in command called \`/start\` which also does some other checks before assignment, including seeing how saturated we are with other open GitHub issues now. This ensures that contributors don't "bite off more than they can chew."\n\nThis feature is especially useful for our open source partners who want to attract talent from around the world to contribute, without having to manually assign them before starting.\n\nWhen pricing is set on any GitHub Issue, they will be automatically populated in our [DevPool Directory](https://devpool.directory) making it easy for contributors to discover and join new projects.`,
     });
-    await n.rest.issues.createComment({ owner: c, repo: a, issue_number: u, body: `/start` });
-  } else if (t === "issue_comment.edited" && i.includes("ubiquity-os-marketplace/text-conversation-rewards")) {
+    await A.rest.issues.createComment({ owner: a, repo: i, issue_number: c, body: `/start` });
   }
 }
 async function handleLabel(e) {
@@ -31507,7 +31506,7 @@ async function handleLabel(e) {
       issue_number: A,
       body: `The first step is for me to register my wallet address to collect rewards.`,
     });
-    await r.rest.issues.createComment({ owner: n, repo: o, issue_number: A, body: "/wallet ubq.eth" });
+    await r.rest.issues.createComment({ owner: n, repo: o, issue_number: A, body: "/wallet 0xefC0e701A824943b469a694aC564Aa1efF7Ab7dd" });
   } else {
     s.info("Ignoring label change", { label: i, assignee: t.issue.assignee, repo: o });
   }
