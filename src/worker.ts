@@ -5,7 +5,6 @@ import { ExecutionContext } from "hono";
 import manifest from "../manifest.json";
 import { runPlugin } from "./index";
 import { Context, Env, envSchema, PluginSettings, pluginSettingsSchema, SupportedEvents } from "./types";
-
 export default {
   async fetch(request: Request, env: Env, executionCtx?: ExecutionContext) {
     return createPlugin<PluginSettings, Env, null, SupportedEvents>(

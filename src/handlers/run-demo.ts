@@ -149,7 +149,7 @@ async function createPullRequest({ payload, logger, userOctokit, userName }: Con
 }
 
 export async function handleComment(context: Context<"issue_comment.created" | "issue_comment.edited">) {
-  const {  payload, logger, octokit, userName, userOctokit } = context;
+  const { payload, logger, octokit, userName, userOctokit } = context;
 
   const body = payload.comment.body;
   const repo = payload.repository.name;
