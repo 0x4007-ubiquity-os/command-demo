@@ -31400,23 +31400,29 @@ var Tt = {
 var kt = Octokit.plugin(throttling, retry, paginateRest, restEndpointMethods, paginateGraphQL).defaults((e) => ({ ...Tt, ...e }));
 async function isUserAdmin({ payload: e, octokit: t, logger: r }) {
   const s = e.sender.login;
-  try {
-    await t.rest.orgs.getMembershipForUser({ org: e.repository.owner.login, username: s });
+  const o = e.repository.owner.login;
+  const A = e.repository.name;
+  if (s === o) {
+    r.debug(`${s} is the repository owner`);
     return true;
-  } catch (t) {
-    r.debug(`${s} is not a member of ${e.repository.owner.login}`, { e: t });
   }
-  const o = await t.rest.repos.getCollaboratorPermissionLevel({ username: s, owner: e.repository.owner.login, repo: e.repository.name });
-  const A = o.data.role_name?.toLowerCase();
-  r.debug(`Retrieved collaborator permission level for ${s}.`, {
-    username: s,
-    owner: e.repository.owner.login,
-    repo: e.repository.name,
-    isAdmin: o.data.user?.permissions?.admin,
-    role: A,
-    data: o.data,
-  });
-  return !!o.data.user?.permissions?.admin;
+  try {
+    try {
+      await t.rest.orgs.getMembershipForUser({ org: o, username: s });
+      r.debug(`${s} is a member of organization ${o}`);
+      return true;
+    } catch (e) {
+      r.debug(`${s} is not a member of ${o}`, { e: e });
+    }
+    const e = await t.rest.repos.getCollaboratorPermissionLevel({ username: s, owner: o, repo: A });
+    const n = e.data.role_name?.toLowerCase();
+    const i = !!e.data.user?.permissions?.admin;
+    r.debug(`Retrieved collaborator permission level for ${s}`, { username: s, owner: o, repo: A, isAdmin: i, role: n, data: e.data });
+    return i;
+  } catch (e) {
+    r.debug(`Failed to check permissions for ${s}`, { e: e });
+    return false;
+  }
 }
 async function setLabels({ payload: e, octokit: t }) {
   const r = e.repository.name;
@@ -31474,7 +31480,7 @@ async function handleComment(e) {
       owner: c,
       repo: a,
       issue_number: u,
-      body: `Now I can self assign to this task!\n\nWe have a built-in command called \`/start\` which also does some other checks before assignment, including seeing how saturated we are with other open GitHub issues now. This ensures that contributors don't "bite off more than they can chew."\n\nThis feature is especially useful for our open source partners who want to attract talent from around the world to contribute, without having to manually assign them before starting. \n\nWhen pricing is set on any GitHub Issue, they will be automatically populated in our [DevPool Directory](https://devpool.directory) making it easy for contributors to discover and join new projects.`,
+      body: `Now I can self assign to this task!\n\nWe have a built-in command called \`/start\` which also does some other checks before assignment, including seeing how saturated we are with other open GitHub issues now. This ensures that contributors don't "bite off more than they can chew."\n\nThis feature is especially useful for our open source partners who want to attract talent from around the world to contribute, without having to manually assign them before starting.\n\nWhen pricing is set on any GitHub Issue, they will be automatically populated in our [DevPool Directory](https://devpool.directory) making it easy for contributors to discover and join new projects.`,
     });
     await n.rest.issues.createComment({ owner: c, repo: a, issue_number: u, body: `/start` });
   } else if (t === "issue_comment.edited" && i.includes("ubiquity-os-marketplace/text-conversation-rewards")) {
