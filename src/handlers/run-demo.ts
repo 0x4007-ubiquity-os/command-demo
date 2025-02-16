@@ -2,30 +2,51 @@ import { Context } from "../types";
 
 async function isUserAdmin({ payload, octokit, logger }: Context) {
   const username = payload.sender.login;
-  try {
-    await octokit.rest.orgs.getMembershipForUser({
-      org: payload.repository.owner.login,
-      username,
-    });
+  const repoOwner = payload.repository.owner.login;
+  const repoName = payload.repository.name;
+
+  // First check if user is the repository owner
+  if (username === repoOwner) {
+    logger.debug(`${username} is the repository owner`);
     return true;
-  } catch (e) {
-    logger.debug(`${username} is not a member of ${payload.repository.owner.login}`, { e });
   }
-  const permissionLevel = await octokit.rest.repos.getCollaboratorPermissionLevel({
-    username,
-    owner: payload.repository.owner.login,
-    repo: payload.repository.name,
-  });
-  const role = permissionLevel.data.role_name?.toLowerCase();
-  logger.debug(`Retrieved collaborator permission level for ${username}.`, {
-    username,
-    owner: payload.repository.owner.login,
-    repo: payload.repository.name,
-    isAdmin: permissionLevel.data.user?.permissions?.admin,
-    role,
-    data: permissionLevel.data,
-  });
-  return !!permissionLevel.data.user?.permissions?.admin;
+
+  try {
+    // Try organization membership first
+    try {
+      await octokit.rest.orgs.getMembershipForUser({
+        org: repoOwner,
+        username,
+      });
+      logger.debug(`${username} is a member of organization ${repoOwner}`);
+      return true;
+    } catch (e) {
+      logger.debug(`${username} is not a member of ${repoOwner}`, { e });
+    }
+
+    // If not an org member, check repository permissions
+    const permissionLevel = await octokit.rest.repos.getCollaboratorPermissionLevel({
+      username,
+      owner: repoOwner,
+      repo: repoName,
+    });
+    const role = permissionLevel.data.role_name?.toLowerCase();
+    const isAdmin = !!permissionLevel.data.user?.permissions?.admin;
+
+    logger.debug(`Retrieved collaborator permission level for ${username}`, {
+      username,
+      owner: repoOwner,
+      repo: repoName,
+      isAdmin,
+      role,
+      data: permissionLevel.data,
+    });
+
+    return isAdmin;
+  } catch (e) {
+    logger.debug(`Failed to check permissions for ${username}`, { e });
+    return false;
+  }
 }
 
 async function setLabels({ payload, octokit }: Context) {
@@ -159,7 +180,7 @@ export async function handleComment(context: Context<"issue_comment.created" | "
 
 We have a built-in command called \`/start\` which also does some other checks before assignment, including seeing how saturated we are with other open GitHub issues now. This ensures that contributors don't "bite off more than they can chew."
 
-This feature is especially useful for our open source partners who want to attract talent from around the world to contribute, without having to manually assign them before starting. 
+This feature is especially useful for our open source partners who want to attract talent from around the world to contribute, without having to manually assign them before starting.
 
 When pricing is set on any GitHub Issue, they will be automatically populated in our [DevPool Directory](https://devpool.directory) making it easy for contributors to discover and join new projects.`,
     });
